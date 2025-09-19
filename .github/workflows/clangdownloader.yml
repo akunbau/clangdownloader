@@ -1,0 +1,26 @@
+name: Download & Send Clang
+
+on:
+  workflow_dispatch:
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install aria2
+        run: sudo apt-get update && sudo apt-get install -y aria2
+
+      - name: Download Clang from GitHub Release
+        run: |
+          mkdir -p downloads
+          aria2c -x 16 -s 16 -d downloads -o Clang.tar.gz "https://github.com/ZyCromerZ/Clang/releases/download/22.0.0git-20250919-release/Clang-22.0.0git-20250919.tar.gz"
+
+      - name: Upload ke Telegram
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: |
+          curl -F "chat_id=${CHAT_ID}" \
+               -F "document=@downloads/Clang.tar.gz" \
+               "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument"
