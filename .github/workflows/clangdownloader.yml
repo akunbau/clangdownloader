@@ -1,26 +1,33 @@
-name: Download & Send Clang
+name: Download and Upload to Transfer.sh
 
 on:
   workflow_dispatch:
 
 jobs:
-  download:
+  download-and-upload:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install aria2
+      - name: Install aria2 (untuk download cepat)
         run: sudo apt-get update && sudo apt-get install -y aria2
 
-      - name: Download Clang from GitHub Release
+      - name: Download Clang File from GitHub Release
         run: |
           mkdir -p downloads
-          aria2c -x 16 -s 16 -d downloads -o Clang.tar.gz "https://github.com/ZyCromerZ/Clang/releases/download/22.0.0git-20250919-release/Clang-22.0.0git-20250919.tar.gz"
+          aria2c -x 16 -s 16 -d downloads -o Clang.tar.gz \
+            "https://github.com/ZyCromerZ/Clang/releases/download/22.0.0git-20250919-release/Clang-22.0.0git-20250919.tar.gz"
 
-      - name: Upload ke Telegram
+      - name: Upload to transfer.sh
+        id: upload
+        run: |
+          url=$(curl --upload-file downloads/Clang.tar.gz https://transfer.sh/Clang-22.0.0git-20250919.tar.gz)
+          echo "download_url=$url" >> $GITHUB_OUTPUT
+
+      - name: Send link to Telegram
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
         run: |
-          curl -F "chat_id=${CHAT_ID}" \
-               -F "document=@downloads/Clang.tar.gz" \
-               "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument"
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${CHAT_ID}" \
+            -d "text=✅ File Clang berhasil diupload ke transfer.sh:\n${{ steps.upload.outputs.download_url }}"
