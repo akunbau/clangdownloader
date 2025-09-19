@@ -1,26 +1,29 @@
-name: Download and Upload via 0x0.st
+name: Download and Upload to Gofile
 
 on:
   workflow_dispatch:
 
 jobs:
-  download-and-upload:
+  upload:
     runs-on: ubuntu-latest
 
     steps:
       - name: Install aria2
-        run: sudo apt-get update && sudo apt-get install -y aria2
+        run: sudo apt-get update && sudo apt-get install -y aria2 jq
 
-      - name: Download Clang from GitHub Release
+      - name: Download Clang File
         run: |
           mkdir -p downloads
           aria2c -x 16 -s 16 -d downloads -o Clang.tar.gz \
             "https://github.com/ZyCromerZ/Clang/releases/download/22.0.0git-20250919-release/Clang-22.0.0git-20250919.tar.gz"
 
-      - name: Upload to 0x0.st
+      - name: Upload to Gofile.io
         id: upload
         run: |
-          url=$(curl -F "file=@downloads/Clang.tar.gz" https://0x0.st)
+          response=$(curl -s -X POST "https://api.gofile.io/uploadFile" \
+            -F "file=@downloads/Clang.tar.gz")
+
+          url=$(echo "$response" | jq -r '.data.downloadPage')
           echo "download_url=$url" >> $GITHUB_OUTPUT
 
       - name: Send link to Telegram
@@ -30,4 +33,4 @@ jobs:
         run: |
           curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
             -d "chat_id=${CHAT_ID}" \
-            -d "text=✅ File Clang berhasil diupload:\n${{ steps.upload.outputs.download_url }}"
+            -d "text=✅ File Clang berhasil diupload ke Gofile.io:\n${{ steps.upload.outputs.download_url }}"
